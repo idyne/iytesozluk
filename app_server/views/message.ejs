@@ -1,0 +1,33 @@
+<div style="display: flex; flex-direction: column;">
+    <h1 style="font-size: 22px;"><a href="/mesaj">mesajlar</a> > <a
+            href="/biri/<%- conversation.other %>"><%- conversation.other %></a></h1>
+    <div class="message-list">
+        <% for(var i = 0; i < conversation.messages.length; ++i){ %>
+
+        <div class="message <%if(conversation.messages[i].owner == username){%>me<%}else{%>other<%}%>">
+            <p>
+                <%-conversation.messages[i].message%>
+            </p>
+            <span style="margin-bottom: 10px; float: right;"><%- fn(conversation.messages[i].date) %></span>
+        </div>
+        <%}%>
+    </div>
+
+    <div class="new-entry-form" style="background-color: transparent; padding: 0;">
+        <span style="font-size: 20px; color: #999;">cevap yaz</span><br />
+        <textarea id="message" rows="10" autocapitalize="off"></textarea><br />
+        <button onclick="sendMessage()">akıt</button>
+    </div>
+</div>
+
+<script>
+    function sendMessage() {
+        $.post('/mesaj/yeni', {
+            username: "<%-conversation.other%>", message: $('#message').val()
+        }, function (data, status) {
+            if
+                (data.success) { window.location.href = '/mesaj/' + data.id }
+        })
+    } $(document).ready(function () {
+        $("html,body").animate({ scrollTop: $(document).height() }, 1000);
+    }) </script>

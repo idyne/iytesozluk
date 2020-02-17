@@ -1,0 +1,136 @@
+<div class="messages">
+    <div class="messages-header">
+        <h3>mesajlar</h3>
+    </div>
+    <div class="messages-list">
+        <% if(conversations.length == 0) {%>
+        <span>hiç mesajın yok</span>
+        <% }else{ %>
+        <ul>
+            <% for(var i = 0; i < conversations.length; ++i){  %>
+            <li _id="<%- conversations[i].id %>" other="<%-conversations[i].other%>">
+            <div class="messages-item" <%if(!conversations[i].lastMessage.isRead){%> style="background-color:#69969C;" <%}%> >
+                    <div class="messages-item-partner">
+                        <%-conversations[i].other%>
+                    </div>
+                    <div class="messages-item-last-message">
+                        <%- conversations[i].lastMessage.owner == username ? "ben: " + conversations[i].lastMessage.message : conversations[i].lastMessage.message %>
+                    </div>
+                    <div class="messages-item-footer">
+                        <button>sil</button>
+                        <div class="messages-item-last-activity">
+                            <%- dateFn(conversations[i].lastMessage.date) %>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            <%}%>
+        </ul>
+        <%}%>
+    </div>
+    <div class="new-message mobile">
+        <div class="new-message-header">
+            yeni mesaj
+        </div>
+        <div class="new-message-form mobile">
+            <div class="message-search-container">
+                <form>
+                    <input type="text" placeholder="kime" autocomplete="off" autocapitalize="off" value="<%- nick %>">
+                </form>
+                <div class="search-dropdown">
+                </div>
+            </div>
+            <textarea id="message"></textarea>
+            <button onclick="sendMessage()">akıt</button>
+        </div>
+    </div>
+</div>
+
+<div class="right">
+    <div class="new-message">
+        <div class="new-message-header">
+            yeni mesaj
+        </div>
+        <div class="new-message-form desktop">
+            <div class="message-search-container">
+                <form>
+                    <input type="text" placeholder="kime" autocomplete="off" autocapitalize="off" value="<%- nick %>">
+                </form>
+                <div class="search-dropdown">
+                </div>
+            </div>
+            <textarea id="message-mobile"></textarea>
+            <button onclick="sendMessage()">akıt</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function sendMessage() {
+        $.post('/mesaj/yeni', {
+            username: $('.new-message-form.desktop input:first-child').val() != "" ? $('.new-message-form.desktop input:first-child').val(): $('.new-message-form.mobile input:first-child').val(),
+            message: $('#message').val() != "" ? $('#message').val() : $('#message-mobile').val()
+        }, function (data, status) {
+            if (data.success) {
+                window.location.href = '/mesaj/' + data.id
+            }
+        })
+    }
+
+    function redirectToMessage(id) {
+        window.location.href = '/mesaj/' + id
+    }
+
+    $('.messages-list li').click(function (event) {
+        $target = $(event.target);
+        if (!$target.closest('.messages-list li button').length) {
+            redirectToMessage($(this).attr('_id'))
+        }else{
+            deleteMessages($(this).attr('other'))
+        }
+    })
+
+    let mjqxhr = null
+    $('.message-search-container input').on('input', function (e) {
+        console.log($('.new-message-form input:first-child').val())
+        let target = $(e.target)
+        let dropdown = target.parent().next()
+        if (target.val() != "") {
+            if (mjqxhr) clearTimeout(mjqxhr)
+            mjqxhr = setTimeout(() => {
+                $.get(`/autocomplete/nick?nick=${target.val()}`, function (data, status) {
+                    dropdown.width(dropdown.parent().width())
+                    dropdown.css("display", "flex")
+                    dropdown.html("")
+                    for (let i = 0; i < data.nicks.length; ++i) {
+                        dropdown.append(`<a onclick="$('.message-search-container input').val('${data.nicks[i].username}')">${data.nicks[i].username}</a>`)
+                    }
+                    if (dropdown.html() == "") {
+                        dropdown.append(`<span style="padding: 5px 10px; text-align: center;">böyle biri yok</span>`)
+                    }
+                })
+            }, 200);
+        } else {
+            dropdown.hide()
+        }
+    })
+    $(document).click(function (event) {
+        $target = $(event.target);
+        if (!$target.closest('.message-search-container').length &&
+            $('.message-search-container .search-dropdown').is(":visible")) {
+            $('.message-search-container .search-dropdown').hide();
+        }
+    });
+
+    $('.new-message-form form').on('submit', function (e) {
+        e.preventDefault()
+    })
+
+    function deleteMessages(other) {
+        $.post('/mesaj/sil', { other: other }, function (data, status) {
+            if (data.success) {
+                location.reload()
+            }
+        })
+    }
+</script>

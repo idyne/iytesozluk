@@ -1,0 +1,137 @@
+<div class="topic-body">
+    <div class="entry-item-list">
+        <div class="entry-item-header">
+            <h3 class="entry-item-topic"><%- topic.topic %></h3>
+            <div class="entry-item-header-actions">
+
+                <span>şükela: <a style="<%if(topic.a == "nice"){%> color: red <% } %>"
+                        href="/<%- link %>--<%- topic._id %><%if(topic.a != "nice"){%>?a=nice<%}%>">tümü</a> <a style="<%if(topic.a == "dailynice"){%> color: red <% } %>"
+                        href="/<%- link %>--<%- topic._id %><%if(topic.a != "dailynice"){%>?a=dailynice<%}%>">bugün</a></span>
+                <select id="page-select-0" onchange="goToPage(0)">
+                    <% for(var i = 1; i < totalPage + 1; i++){ %>
+                        <option <%if(i == currentPage){ %> selected <% } %>><%- i %></option>
+                    <% } %>
+                </select>
+            </div>
+        </div>
+        <hr/>
+        <% for(var i = 0; i < entries.length; i++){ %>
+        <div class=" entry-item">
+                        <div class="entry-item-content">
+                            <p><%- entries[i].entry %></p>
+                        </div>
+                        <div class="entry-item-footer">
+                            <div class="entry-item-footer-left">
+                                <button onclick="nice('<%- entries[i]._id %>', 0, this)" class="<% if(nices.includes(entries[i]._id)){ %>active<%}%>"></i><i class="fas fa-chevron-up"></i></button>
+                    <button onclick="nice('<%- entries[i]._id %>', 1, this)" class="<% if(bads.includes(entries[i]._id)){ %>active<%}%>"></i><i class="fas fa-chevron-down"></i></button>
+                </div>
+                <div class="entry-item-footer-right">
+                    <a href="#"><%- entries[i].date %></a>
+                    <a href="/biri/<%-entries[i].owner.replace(/ /g, '-')%>"><%- entries[i].owner %> </a> <button
+                                    class="dropdown-button" onclick="openDropdown(this)"><i
+                                        class="fas fa-ellipsis-h"></i></button>
+                                <div class="dropdown">
+                                    <% if(entries[i].owner == username){ %>
+                                    <a href="#" onclick="openDeleteEntryModal(this)">sil</a>
+                                    <a onclick="window.location.href = `/entry/duzelt/<%- entries[i].id %>`">düzelt</a>
+
+                                    <% }else{if(isLoggedIn){ %>
+                                    <a href="/mesaj?nick=<%- entries[i].owner %>" onclick="window.location.href = '/mesaj?nick=<%- entries[i].owner %>'">mesaj gönder</a>
+                                    <%}%>
+                                    <a onclick="reportEntry('<%- entries[i].id %>')">şikayet</a>
+                                    <% } %>
+                                </div>
+                                <div class="delete-entry-modal">
+                                    <div class="delete-entry-modal-wrapper">
+                                        <div class="delete-entry-modal-header">
+                                            <p>harbiden silecek misin?</p>
+                                        </div>
+                                        <div class="delete-entry-modal-content">
+                                            <button onclick="$('.delete-entry-modal').removeClass('active')">neyse
+                                                kalsın</button>
+                                            <button onclick="deleteEntry('<%- entries[i]._id %>')">evet ya</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+            </div>
+            <% } %>
+        </div>
+        <select style="display: block; float: right;" id="page-select-1" onchange="goToPage(1)">
+            <% for(var i = 1; i < totalPage + 1; i++){ %>
+            <option <%if(i == currentPage){ %> selected <% } %>><%- i %></option>
+            <% } %>
+        </select>
+        <br /><br />
+        <% include newEntryForm %>
+    </div>
+    <div class="right">
+        <div class="box">
+            <p>iytesözlük<br/>v1.1.0</p>
+        </div>
+    </div>
+
+    <script>
+
+
+        function nice(id, nice, element) {
+            $(element).addClass('active')
+            $(element).siblings().removeClass('active')
+                <% if (isLoggedIn) { %>
+            var datas = {
+                        id: id,
+                        nice: nice
+                    }
+                    $.post('/begen', datas, function (data, status) {
+                        if (!data.success) {
+                        }
+                    })
+                        <% } %>
+        }
+
+        function goToPage(i) {
+            window.location.href = `/<%- link %>--<%- topic._id %>?<% if(typeof topic.a !== 'undefined') { %>a=<%- topic.a %><% } %>&p=${$('#page-select-' + i).val()}`
+        }
+        $(document).click(function (e) {
+            if (!$(e.target).hasClass('dropdown') && !$(e.target).parent().hasClass('dropdown') && !$(e.target).hasClass('dropdown-button') && !$(e.target).parent().hasClass('dropdown-button'))
+                $('.dropdown').removeClass('active')
+            if ($(e.target).hasClass('delete-entry-modal'))
+                $('.delete-entry-modal').removeClass('active')
+        })
+        function openDropdown(element) {
+            var dropdown = $(element).next()
+            var isOpened = dropdown.hasClass('active')
+            $('.dropdown').removeClass('active')
+            if (!isOpened) {
+                dropdown.toggleClass('active')
+                dropdown.css('top', $(element).position().top + $(element).height())
+                dropdown.css('left', $(element).position().left - dropdown.width() + 2 * $(element).width())
+            }
+        }
+
+        $('.dropdown a').click(function (e) {
+            e.preventDefault()
+        })
+
+        function openDeleteEntryModal(element) {
+            var modal = $(element).parent().next()
+            var modalWrapper = modal.children().eq(0)
+            modal.addClass('active')
+            modalWrapper.css('top', ($(window).height() - modalWrapper.height()) / 2)
+            modalWrapper.css('left', ($(window).width() - modalWrapper.width()) / 2)
+        }
+
+        function deleteEntry(id) {
+            var datas = {
+                id: id,
+            }
+            $.post('/entry-sil', datas, function (data, status) {
+                if (!data.success) {
+                }
+                location.reload()
+            })
+        }
+
+
+    </script>

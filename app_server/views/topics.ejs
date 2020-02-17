@@ -1,0 +1,12 @@
+<div class="topics">
+    <% for(var i = 0; i < topics.length; i++){ %>
+    <div class="topic">
+        <a href="/<%- `${topics[i].link}--${topics[i].id}` %>">
+            <div class="topic-link">
+                <h3><%- topics[i].topic %></h3>
+                <h3 style="float: right; padding-right:4px;"><%- topics[i].entries.length %></h3>
+            </div>
+        </a>
+    </div>
+    <% } %>
+</div>

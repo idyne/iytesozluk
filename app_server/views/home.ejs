@@ -1,0 +1,161 @@
+<%
+function formatDate(date) {
+    date = new Date(date)
+    var month = date.getMonth() + 1
+    if (month.toString().length == 1) {
+        month = '0' + month.toString()
+    }
+    var day = date.getDate()
+    if (day.toString().length == 1) {
+        day = '0' + day.toString()
+    }
+    var hour = date.getHours()
+    if (hour.toString().length == 1) {
+        hour = '0' + hour.toString()
+    }
+    var minute = date.getMinutes()
+    if (minute.toString().length == 1) {
+        minute = '0' + minute.toString()
+    }
+    var second = date.getSeconds()
+    if (second.toString().length == 1) {
+        second = '0' + second.toString()
+    }
+    [date.getFullYear(), month, day, hour, minute, second, date.getMilliseconds()]
+    return `${day}.${month}.${date.getFullYear()} ${hour}: ${minute}`
+}
+%>
+
+<div class="home-topics">
+    <% for(var i = 0; i < homeTopics.length; i++){ %>
+    <div class="topic-body">
+        <span class="topicID" hidden><%- homeTopics[i]._id %></span>
+        <div class="entry-item-list">
+            <div class="entry-item-header">
+                <h3 class="entry-item-topic"><a style="color:unset; text-decoration: none;"
+                        href="/<%- `${homeTopics[i].link}--${homeTopics[i]._id}` %>"><%- homeTopics[i].topic %></a></h3>
+            </div>
+            <div class=" entry-item">
+                <div class="entry-item-content">
+                    <p><%- homeTopics[i].firstEntry.entry %></p>
+                </div>
+                <div class="entry-item-footer">
+                    <div class="entry-item-footer-left">
+                        <button onclick="nice('<%- homeTopics[i].firstEntry._id %>', 0, this)" class="<% if(nices.includes(homeTopics[i].firstEntry._id)){ %>active<%}%>"></i><i
+                                class="fas fa-chevron-up"></i></button>
+                        <button onclick="nice('<%- homeTopics[i].firstEntry._id %>', 1, this)"
+                            class="<% if(bads.includes(homeTopics[i].firstEntry._id)){ %>active<%}%>"></i><i
+                                class="fas fa-chevron-down"></i></button>
+                    </div>
+                    <div class="entry-item-footer-right">
+                        <a
+                            href="/<%- `${homeTopics[i].link}--${homeTopics[i]._id}` %>"><%- formatDate(homeTopics[i].firstEntry.date) %></a>
+                            <a
+                                href="/biri/<%- homeTopics[i].firstEntry.owner.replace(/ /g, '-') %>"><%- homeTopics[i].firstEntry.owner %></a>
+                            <button class="dropdown-button" onclick="openDropdown(this)"><i
+                                    class="fas fa-ellipsis-h"></i></button>
+                            <div class="dropdown">
+                                <% if(homeTopics[i].firstEntry.owner == username){ %>
+                                <a href="#" onclick="openDeleteEntryModal(this)">sil</a>
+                                <a onclick="window.location.href = `/entry/duzelt/<%- homeTopics[i].firstEntry.id %>`">düzelt</a>
+                                <% }else{if(isLoggedIn){ %>
+                                <a href="/mesaj?nick=<%- homeTopics[i].firstEntry.owner %>" onclick="window.location.href = '/mesaj?nick=<%- homeTopics[i].firstEntry.owner %>'">mesaj gönder</a>
+                                <%}%>
+                                <a href="#" onclick="reportEntry('<%- homeTopics[i].firstEntry._id %>')">şikayet</a>
+                                <% } %>
+                            </div>
+                            <div class="delete-entry-modal">
+                                <div class="delete-entry-modal-wrapper">
+                                    <div class="delete-entry-modal-header">
+                                        <p>harbiden silecek misin?</p>
+                                    </div>
+                                    <div class="delete-entry-modal-content">
+                                        <button onclick="$('.delete-entry-modal').removeClass('active')">neyse
+                                            kalsın</button>
+                                        <button onclick="deleteEntry('<%- homeTopics[i].firstEntry._id %>')">evet
+                                            ya</button>
+                                    </div>
+                                </div>
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <% } %>
+</div>
+<div class="right">
+    <div class="box">
+        <p>iytesözlük<br/>v1.1.0</p>
+    </div>
+</div>
+
+<script>
+
+
+    function nice(id, nice, element) {
+        $(element).addClass('active')
+        $(element).siblings().removeClass('active')
+        var datas = {
+            id: id,
+            nice: nice
+        }
+            <% if (isLoggedIn) { %>
+                $.post('/begen', datas, function (data, status) {
+
+                })
+                <% } %>
+        }
+
+    $(document).click(function (e) {
+        if (!$(e.target).hasClass('dropdown') && !$(e.target).parent().hasClass('dropdown') && !$(e.target).hasClass('dropdown-button') && !$(e.target).parent().hasClass('dropdown-button'))
+            $('.dropdown').removeClass('active')
+        if ($(e.target).hasClass('delete-entry-modal'))
+            $('.delete-entry-modal').removeClass('active')
+    })
+    function openDropdown(element) {
+        var dropdown = $(element).next()
+        var isOpened = dropdown.hasClass('active')
+        $('.dropdown').removeClass('active')
+        if (!isOpened) {
+            dropdown.toggleClass('active')
+            dropdown.css('top', $(element).position().top + $(element).height())
+            dropdown.css('left', $(element).position().left - dropdown.width() + 2 * $(element).width())
+        }
+    }
+
+    $('.dropdown a').click(function (e) {
+        e.preventDefault()
+    })
+
+    function openDeleteEntryModal(element) {
+        var modal = $(element).parent().next()
+        var modalWrapper = modal.children().eq(0)
+        modal.addClass('active')
+        modalWrapper.css('top', ($(window).height() - modalWrapper.height()) / 2)
+        modalWrapper.css('left', ($(window).width() - modalWrapper.width()) / 2)
+    }
+
+    function deleteEntry(id) {
+        var datas = {
+            id: id,
+        }
+        $.post('/entry-sil', datas, function (data, status) {
+
+            location.reload()
+        })
+    }
+
+    window.addEventListener("resize", (e) => {
+        var dropdown = $('.dropdown.active')
+        var element = dropdown.prev()
+        var isOpened = dropdown.hasClass('active')
+        if (isOpened) {
+            dropdown.css('top', $(element).position().top + $(element).height())
+            dropdown.css('left', $(element).position().left - dropdown.width() + 2 * $(element).width())
+        }
+    });
+
+
+
+</script>

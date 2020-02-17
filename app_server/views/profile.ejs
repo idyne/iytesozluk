@@ -1,0 +1,223 @@
+<% if(_user != undefined ) var username = _user.username;
+    else var username = '' %>
+<div class="profile">
+    <div class="username">
+        <h1><%- user.username %></h1>
+    </div>
+    <div class="actions">
+        <%if(isLoggedIn && user.username != username){%><a href="/mesaj?nick=<%- user.username %>"
+            onclick="window.location.href = '/mesaj?nick=<%- user.username %>'">mesaj gönder</a><%}%>
+    </div>
+    <div class="activity">
+        <ul>
+            <li title="toplam entry sayısı"><%- activities.totalEntry %></li>
+        <li title="son 1 ayda girdiği entry sayısı"><%- activities.lastMonth %></li>
+        <li title="son 1 haftada girdiği entry sayısı"><%- activities.lastWeek %></li>
+        <li title="son 24 saatte girdiği entry sayısı"><%- activities.lastDay %></li>
+        <li title="son entry girdiği zaman"><%- activities.lastActivity %></li>
+        </ul>
+    </div>
+    <div class="head-entry">
+        <blockquote>
+            <a href="/<%- `${headEntry.topicLink}--${headEntry.topicID}` %>"
+                class="topic-name"><%- headEntry.topicName %></a>
+            <p class="entry"><%- fn(headEntry.entry) %></p>
+            <a class="date" href="#"><%- headEntry.date %></a>
+        </blockquote>
+    </div>
+    <div class="entries">
+        <h1 class="entries-header">
+            entry'ler (<%- activities.totalEntry %>)
+        </h1>
+        <div class="entries-body">
+            <% for(var i = 0; i < entries.length; i++){ %>
+            <div class="entries-entry">
+                <div class="topic-name">
+                    <a href="/<%- `${entries[i].topicLink}--${entries[i].topicID}` %>"><%- entries[i].topicName %></a>
+                </div>
+                <div class="entry">
+                    <p><%- fn(entries[i].entry) %></p>
+                </div>
+                <div class="entry-footer">
+                    <div class="actions">
+                        <div class="left">
+                            <button onclick="nice('<%- entries[i]._id %>', 0, this)" class="<% if(nices.includes(entries[i]._id)){ %>active<%}%>"></i><i class="fas fa-chevron-up"></i></button>
+                            <button onclick="nice('<%- entries[i]._id %>', 1, this)" class="<% if(bads.includes(entries[i]._id)){ %>active<%}%>"></i><i class="fas fa-chevron-down"></i></button>
+                        </div>
+                    </div>
+                    <div class="footer-right">
+                            <a href="#"><%- entries[i].date %></a>
+                            <a href=" #"><%- entries[i].owner %></a>
+                                <button class="dropdown-button" onclick="openDropdown(this)"><i
+                                        class="fas fa-ellipsis-h"></i></button>
+                                <div class="dropdown">
+                                    <% if(entries[i].owner == username){ %>
+                                    <a href="#" onclick="openDeleteEntryModal(this)">sil</a>
+                                    <a onclick="window.location.href = `/entry/duzelt/<%- entries[i].id %>`">düzelt</a>
+
+                                    <% }else{if(isLoggedIn){ %>
+
+                                    <a href="/mesaj?nick=<%- entries[i].owner %>"
+                                        onclick="window.location.href = '/mesaj?nick=<%- entries[i].owner %>'">mesaj
+                                        gönder</a>
+                                    <%}%>
+                                    <a onclick="reportEntry('<%- entries[i].id %>')">şikayet</a>
+                                    <% } %>
+                                </div>
+                                <div class="delete-entry-modal">
+                                    <div class="delete-entry-modal-wrapper">
+                                        <div class="delete-entry-modal-header">
+                                            <p>harbiden silecek misin?</p>
+                                        </div>
+                                        <div class="delete-entry-modal-content">
+                                            <button onclick="$('.delete-entry-modal').removeClass('active')">neyse
+                                                kalsın</button>
+                                            <button onclick="deleteEntry('<%- entries[i]._id %>')">evet ya</button>
+                                        </div>
+                                    </div>
+                                </div>
+                        </div>
+                    </div>
+                </div>
+                <% } %>
+            </div>
+        </div>
+        <a class="see-more" href="#" onclick="loadMore(this)">daha fazla göster</a>
+    </div>
+
+    <script>
+        var currentPage = 1;
+        $('.see-more').click(function (e) {
+            e.preventDefault()
+        })
+
+        function loadMore(element) {
+            $(element).text('yükleniyor')
+            $(element).attr('onclick', '')
+            $.post('/daha-fazla-entry', {
+                owner: "<%-user._id%>",
+                start: currentPage * 10,
+                end: (currentPage + 1) * 10,
+                username: '<%- username %>'
+            }, function (data, status) {
+                if (data.success) {
+                    var entries = data.entries;
+                    currentPage++;
+                    var lastLoaded;
+                    for (var i = 0; i < entries.length; i++) {
+                        lastLoaded = $('.entries-body').append(`
+                    <div class="entries-entry">
+                        <div class="topic-name">
+                            <a href="/${entries[i].topicLink}--${entries[i].topicID}">${entries[i].topicName}</a>
+                        </div>
+                        <div class="entry">
+                            <p>${fn(entries[i].entry)}</p>
+                        </div>
+                        <div class="entry-footer">
+                            <div class="actions">
+                                <div class="left">
+                                    <button class="${entries[i].isNice == 1 ? 'active' : ''}" onclick="nice('${entries[i]._id}', 0, this)"></i><i class="fas fa-chevron-up"></i></button>
+                                    <button class="${entries[i].isNice == -1 ? 'active' : ''}" onclick="nice('${entries[i]._id}', 1, this)"></i><i class="fas fa-chevron-down"></i></button>
+                                </div>
+                            </div>
+                            <div class="footer-right">
+                                    <a href="#">${entries[i].date}</a>
+                                    <a href=" #">${entries[i].owner}</a>
+                                        <button class="dropdown-button" onclick="openDropdown(this)"><i
+                                                class="fas fa-ellipsis-h"></i></button>
+                                        <div class="dropdown">
+                                            ${ entries[i].owner == '<%- username %>' ?
+                                '<a href="#" onclick="openDeleteEntryModal(this)">sil</a>' : ''
+                            }
+                                        </div>
+                                        <div class="delete-entry-modal">
+                                            <div class="delete-entry-modal-wrapper">
+                                                <div class="delete-entry-modal-header">
+                                                    <p>harbiden silecek misin?</p>
+                                                </div>
+                                                <div class="delete-entry-modal-content">
+                                                    <button onclick="$('.delete-entry-modal').removeClass('active')">neyse
+                                                        kalsın</button>
+                                                    <button onclick="deleteEntry('${entries[i]._id}')">evet ya</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                </div>
+                            </div>
+                        </div>
+                    `).children().last()
+                    }
+                    loadMoreButton()
+                    var niceButton = lastLoaded.find('.actions .left button').eq(0)
+                    var badButton = lastLoaded.find('.actions .left button').eq(1)
+
+                    $(element).text('daha fazla göster')
+                    $(element).attr('onclick', 'loadMore(this)')
+                }
+            })
+        }
+
+
+        function loadMoreButton() {
+            if ($('.entries-body').children().length < <%-activities.totalEntry %> ) {
+                $('.see-more').addClass('active')
+            } else {
+                $('.see-more').removeClass('active')
+            }
+        }
+        loadMoreButton()
+
+        function nice(id, nice, element) {
+            $(element).addClass('active')
+            $(element).siblings().removeClass('active') <%
+                if (isLoggedIn) {
+                    %>
+                    var datas = {
+                    id: id,
+                    nice: nice
+                }
+                $.post('/begen', datas, function (data, status) { }) <%
+                } %>
+        }
+
+        $(document).click(function (e) {
+            if (!$(e.target).hasClass('dropdown') && !$(e.target).parent().hasClass('dropdown') && !$(e.target)
+                .hasClass('dropdown-button') && !$(e.target).parent().hasClass('dropdown-button'))
+                $('.dropdown').removeClass('active')
+            if ($(e.target).hasClass('delete-entry-modal'))
+                $('.delete-entry-modal').removeClass('active')
+        })
+
+        function openDropdown(element) {
+            var dropdown = $(element).next()
+            var isOpened = dropdown.hasClass('active')
+            $('.dropdown').removeClass('active')
+            if (!isOpened) {
+                dropdown.toggleClass('active')
+                dropdown.css('top', $(element).position().top + $(element).height())
+                dropdown.css('left', $(element).position().left - dropdown.width() + 2 * $(element).width())
+            }
+        }
+
+        $('.dropdown a').click(function (e) {
+            e.preventDefault()
+        })
+
+        function openDeleteEntryModal(element) {
+            var modal = $(element).parent().next()
+            var modalWrapper = modal.children().eq(0)
+            modal.addClass('active')
+            modalWrapper.css('top', ($(window).height() - modalWrapper.height()) / 2)
+            modalWrapper.css('left', ($(window).width() - modalWrapper.width()) / 2)
+        }
+
+        function deleteEntry(id) {
+            var datas = {
+                id: id,
+            }
+            $.post('/entry-sil', datas, function (data, status) {
+                if (!data.success) { }
+                location.reload()
+            })
+        }
+    </script>

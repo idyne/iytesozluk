@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <% if(typeof title !== 'undefined'){ %>
+        <%-title%> -
+        <% } %>iyte sözlük</title>
+    <link rel="stylesheet" href="/public/stylesheets/styles.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css"
+        integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <link rel="icon" href="/public/resources/icon.png">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-146895978-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+
+        function gtag() {
+            dataLayer.push(arguments);
+        }
+        gtag('js', new Date());
+
+        gtag('config', 'UA-146895978-1');
+    </script>
+</head>
+
+<body>
+    <div id="snackbar"></div>
+    <div id="top-navigation">
+        <div id="top-navigation-header" style="<% if(typeof h === 'undefined'){ %>padding-bottom: 5px<% } %>">
+            <div id="top-navigation-logo">
+                <a href="/"></a>
+                <div class="search-container">
+                    <form action="/">
+                        <input type="text" placeholder="başlık ya da yazar" name="q" autocomplete="off"
+                            autocapitalize="off">
+                        <button type="submit"><i class="fa fa-search"></i></button>
+                    </form>
+                    <div class="search-dropdown">
+                    </div>
+                </div>
+
+            </div>
+            
+            <div id="top-navigation-header-sign-mobile">
+                <% if(isLoggedIn){ %>
+                <a href="/biri/<%-username%>"><i class="far fa-user"></i></a>
+                <a <% if(typeof(m) !== "undefined" && m){ %>style="color: white; background-color:#69969C; border-radius: 4px;"<%}%> href="/mesaj"><i class="<% if(typeof(m) !== "undefined" && m){ %>fas<%}else{%>far<%}%> fa-comment-alt"></i></a>
+                <% } %>
+            </div>
+
+            <div id="top-navigation-header-sign">
+                <% if(!isLoggedIn) { %>
+                <a href="/giris">giriş </a> <a href="/kayit">kayıt ol</a>
+                <% }else{ %>
+                <a href="/biri/<%-username%>"><i class="far fa-user"></i> ben</a>
+                <a <% if(typeof(m) !== "undefined" && m){ %>style="color: white; background-color:#69969C; padding: 8px; border-radius: 4px;"<%}%> href="/mesaj"><i class="<% if(typeof(m) !== "undefined" && m){ %>fas<%}else{%>far<%}%> fa-comment-alt"></i> mesaj</a>
+
+                <div class="top-navigation-menu-wrapper">
+                    <a onclick="topMenu()"><i class="fas fa-ellipsis-h"></i></a>
+                    <div class="top-navigation-menu">
+                        <a href="/ayarlar">ayarlar</a>
+                        <a href="/terk">terk</a>
+                    </div>
+                </div>
+                <% } %>
+            </div>
+        </div>
+        <div id="top-navigation-body">
+                        <div class="top-navigation-body-topics">
+                            <a href="/basliklar">
+                                başlıklar
+                            </a>
+                        </div>
+                        <div class="top-navigation-menu-wrapper">
+                            <a onclick="topMenu()"><i class="fas fa-ellipsis-h"></i></a>
+                            <div class="top-navigation-menu">
+                                <% if(isLoggedIn){ %>
+                                <a href="/ayarlar">ayarlar</a>
+                                <a href="/terk">terk</a>
+                                <% }else{ %>
+                                <a href="/giris">giriş</a>
+                                <a href="/kayit">kayıt</a>
+                                <% } %>
+                            </div>
+                        </div>
+            </div>
+        </div>
+        <div class="container">
+            <div class="page-body">
+                <% if(typeof t === 'undefined'){ %>
+                <div class="topic-list">
+                    <% for(var i = 0; i < topics.length; i++) {%>
+                    <a href="/<%- `${topics[i].link}--${topics[i].id}` %>">
+                        <div class="topic-link">
+                            <span><%- topics[i].topic %></span>
+                            <span style="float: right; padding-right:4px;"><%- topics[i].entries.length %></span>
+                        </div>
+                    </a>
+
+                    <% } %>
+                </div>
+                <% } %>
+                <div class="content">
+                    <%- body %>
+                </div>
+
+            </div>
+        </div>
+        <script>
+            function reportEntry(id) {
+                $('.dropdown').removeClass('active')
+                $.post('/sikayet', { id: id }, function (data, status) {
+                    if (data.success) {
+                        showSnackbar("şikayet edildi")
+                    } else {
+                        showSnackbar("bir şey ters gitti")
+                    }
+                })
+            }
+
+            function showSnackbar(text) {
+                // Get the snackbar DIV
+                var x = document.getElementById("snackbar");
+
+                // Add the "show" class to DIV
+                x.className = "show";
+
+                x.textContent = text
+
+                // After 3 seconds, remove the show class from DIV
+                setTimeout(function () { x.className = x.className.replace("show", ""); }, 3000);
+            }
+            let jqxhr = null
+            $('.search-container input').on('input', function (e) {
+                let target = $(e.target)
+                let dropdown = target.parent().next()
+                if (target.val() != "") {
+                    if (jqxhr) clearTimeout(jqxhr)
+                    jqxhr = setTimeout(() => {
+                        $.get(`/autocomplete/query?q=${target.val()}`, function (data, status) {
+                            dropdown.width(dropdown.parent().width())
+                            dropdown.css("display", "flex")
+                            dropdown.html("")
+                            for (let i = 0; i < data.titles.length; ++i) {
+                                dropdown.append(`<a href="/${data.titles[i].link}--${data.titles[i]._id}">${data.titles[i].topic}</a>`)
+                            } for (let i = 0; i < data.nicks.length; ++i) {
+                                dropdown.append(`<a href="/biri/${data.nicks[i].username}">@${data.nicks[i].username}</a>`)
+                            }
+                            if (dropdown.html() == "") {
+                                dropdown.append(`<span style="padding: 5px 10px; text-align: center;">böyle bir şey yok</span>`)
+                            }
+                        })
+                    }, 200);
+                } else {
+                    dropdown.hide()
+                }
+            })
+            $(document).click(function (event) {
+                $target = $(event.target);
+                if (!$target.closest('.search-container').length &&
+                    $('.search-dropdown').is(":visible")) {
+                    $('.search-dropdown').hide();
+                }
+                if (!$target.closest('.top-navigation-menu-wrapper').length &&
+                    $('.top-navigation-menu').is(":visible")) {
+                    $('.top-navigation-menu').removeClass('active');
+                }
+            });
+            function topMenu() {
+                $('.top-navigation-menu').toggleClass('active')
+            }
+        </script>
+</body>
+
+</html>

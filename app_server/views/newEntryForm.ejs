@@ -1,0 +1,72 @@
+<% if(isLoggedIn) { %>
+<div class="new-entry-form">
+    <span>boş entry atmaya çalışma, deşeriz.</span><br />
+    <div class="new-entry-form-button-set">
+        <button onclick="bkz()">(bkz:hele)</button>
+        <button onclick="link()">https://</button>
+    </div>
+    <textarea id="entry" rows="10" autocapitalize="off" placeholder="&quot;<%- q != "" ? q : topic.topic %>&quot; hakkında bilgi ver"></textarea><br />
+    <button onclick="submitNewEntry()">yetiştir</button>
+</div>
+<% } %>
+<script>
+    function bkz() {
+        var bkz = `(bkz:${prompt("hangi başlığa?", "")})`;
+        if (bkz != null && bkz != "") {
+            insertAtCursor(document.getElementById('entry'), bkz)
+        }
+
+    }
+    function link() {
+        var link = prompt("hangi linke?", "http://")
+        if (validURL(link)) {
+            var placeholder = prompt("linkin adı ne olacak?", "")
+            if (placeholder != null && placeholder != "") {
+                insertAtCursor(document.getElementById('entry'), `[${link} ${placeholder}]`)
+            }
+        }
+    }
+    function insertAtCursor(myField, myValue) {
+        //IE support
+        if (document.selection) {
+            myField.focus();
+            sel = document.selection.createRange();
+            sel.text = myValue;
+        }
+        //MOZILLA and others
+        else if (myField.selectionStart || myField.selectionStart == '0') {
+            var startPos = myField.selectionStart;
+            var endPos = myField.selectionEnd;
+            myField.value = myField.value.substring(0, startPos)
+                + myValue
+                + myField.value.substring(endPos, myField.value.length);
+        } else {
+            myField.value += myValue;
+        }
+    }
+    function validURL(myURL) {
+        var pattern = new RegExp('^(https?:\\/\\/)?' + // protocol
+            '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.?)+[a-z]{2,}|' + // domain name
+            '((\\d{1,3}\\.){3}\\d{1,3}))' + // ip (v4) address
+            '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + //port
+            '(\\?[;&amp;a-z\\d%_.~+=-]*)?' + // query string
+            '(\\#[-a-z\\d_]*)?$', 'i');
+        return pattern.test(myURL);
+    }
+    function submitNewEntry() {
+        if ($('#entry').val() != '') {
+            var datas = {
+                topic: "<%- q != `` ? q : topic.topic %>",
+                entry: $('#entry').val()
+            }
+            $.post('/yeni-girdi', datas, function (data, status) {
+                console.log(data)
+                if (data.success) {
+                    location.reload()
+                }else{
+                    showSnackbar('bir hata oldu')
+                }
+            })
+        }
+    }
+</script>
